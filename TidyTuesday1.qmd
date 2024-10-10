@@ -1,0 +1,84 @@
+---
+title: "Tidy Tuesday"
+subtitle: "National Parks Species Data"
+author: "Hanna Chang"
+format: 
+  html:
+    embed-resources: true
+---
+
+## Loading packages
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(sf)
+library(scales)
+```
+
+## Loading data
+
+```{r, message=FALSE, warning=FALSE}
+most_visited_nps_species_data <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-10-08/most_visited_nps_species_data.csv')
+```
+
+# With a glance at the initial data, which is huge, I'd like to explore the different species that each national park has. Maybe I can also see how diverse the national parks are.
+
+## Data wrangling by name of national park
+
+```{r, message=FALSE, warning=FALSE}
+by_parkname <- most_visited_nps_species_data %>%
+  group_by(ParkName) %>%
+  summarise(total_species = n_distinct(SciName)) %>%
+  arrange(desc(total_species))
+
+head(by_parkname, 10)
+```
+
+## More data wrangling for each national park's species, grouped by category name
+
+```{r, message=FALSE, warning=FALSE}
+by_category <- most_visited_nps_species_data %>%
+  group_by(CategoryName) %>%
+  summarise(total_species = n_distinct(SciName)) %>%
+  arrange(desc(total_species))
+
+join_category <- most_visited_nps_species_data %>%
+  left_join(by_category, by = "CategoryName") %>%
+  group_by(ParkName, CategoryName) %>%
+  summarise(total_species = n_distinct(SciName)) %>%
+  arrange(desc(total_species))
+
+join_category <- join_category %>%
+  group_by(ParkName) %>%
+  mutate(percentage = total_species / sum(total_species) * 100)
+```
+
+# Each national park's species-diversity pie chart
+
+```{r, fig.width=15, fig.height=10, message=FALSE, warning=FALSE}
+ggplot(join_category, aes(x = "", y = percentage, fill = CategoryName)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +
+  facet_wrap(~ParkName, ncol = 5) +
+  theme_void() +
+  theme(legend.position = "bottom", legend.text = element_text(size = 10),
+        legend.title = element_text(size = 12), legend.key.size = unit(0.8, "cm"),
+        strip.text = element_text(size = 9.5),
+        plot.title = element_text(hjust = 0.5), panel.spacing = unit(1.5, "lines"),
+        margin = margin(b = 20)) +
+  scale_fill_viridis_d(option = "G") +
+  labs(title = "Each National Park's species diversity by category name")
+```
+
+## Based on the visual, I'd like to see if species diversity has anything to do with the park's visitor count. I could investigate that in the future.
+
+
+
+
+
+
+
+
