@@ -1,0 +1,83 @@
+---
+title: "Tidy Tuesday 3"
+subtitle: "UNESCO World Heritage Sites"
+author: "Hanna Chang"
+format: 
+  html:
+    embed-resources: true
+---
+
+##### Loading packages
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(ggrepel)
+library(stringr)
+```
+
+##### Loading data
+
+```{r, message=FALSE, warning=FALSE}
+tuesdata <- tidytuesdayR::tt_load('2024-08-13')
+worlds_fairs <- tuesdata$worlds_fairs
+```
+
+##### Data Exploration
+
+```{r}
+names(worlds_fairs)
+head(worlds_fairs)
+```
+
+##### Data Viz
+
+```{r}
+worlds_fairs$name_of_exposition <- str_wrap(worlds_fairs$name_of_exposition, width = 30)
+
+worlds_fairs$start_year <- as.numeric(worlds_fairs$start_year)
+worlds_fairs$end_year <- as.numeric(worlds_fairs$end_year)
+worlds_fairs$start_month <- as.numeric(worlds_fairs$start_month)
+worlds_fairs$end_month <- as.numeric(worlds_fairs$end_month)
+
+# Calculate the start date and end date (from months and years)
+worlds_fairs$start_date <- worlds_fairs$start_year + (worlds_fairs$start_month - 1) / 12
+worlds_fairs$end_date <- worlds_fairs$end_year + (worlds_fairs$end_month - 1) / 12
+
+ggplot(worlds_fairs, aes(
+    x = start_date,
+    xend = end_date,
+    y = name_of_exposition,
+    yend = name_of_exposition,
+    color = country
+  )) +
+  geom_segment(size = 1.2) +
+  geom_text_repel(
+    aes(
+      x = end_date,
+      label = name_of_exposition
+    ),
+    hjust = 0, size = 3, max.overlaps = 50,
+  ) +
+  labs(
+    title = "Timeline of World's Fairs by Country",
+    x = "Year",
+    y = NULL,
+    color = "Country"
+  ) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.1))) +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    plot.title = element_text(hjust = 1.6, vjust = -1, face = "bold", size = 14),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 8)
+  )
+```
+
+
+
